@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 01/17/2026 01:00:09 PM
+// Create Date: 03/08/2026 11:48:55 AM
 // Design Name: 
 // Module Name: pixelLineBuffer
 // Project Name: 
@@ -21,17 +21,21 @@
 
 
 module pixelLineBuffer(
-    input i_clk,
-    input i_rst,
-    input [23:0] i_data,        // 24-bit RGB
-    input i_data_valid,
-    output [23:0] o_data,       // 24-bit RGB
-    input i_rd_data
+    input  i_clk,
+    input  i_rst,
+    input  [23:0] i_data,
+    input  i_data_valid,
+    output [23:0] o_data,
+    output o_data_valid,        
+    input  i_rd_data
 );
 
-reg [23:0] line [511:0];        // 24-bit wide memory
-reg [8:0] wrPntr;
-reg [8:0] rdPntr;
+(* ram_style = "block" *) reg [23:0] line [511:0];
+reg [8:0]  wrPntr;
+reg [8:0]  rdPntr;
+reg [23:0] o_data_reg;
+reg        o_data_valid_reg;
+
 
 always @(posedge i_clk) begin
     if(i_data_valid)
@@ -45,13 +49,34 @@ always @(posedge i_clk) begin
         wrPntr <= wrPntr + 'd1;
 end
 
-assign o_data = line[rdPntr];
+
+wire [8:0] fillLevel = wrPntr - rdPntr;
+wire       rd_safe   = i_rd_data && (fillLevel > 9'd0);
+
+
+always @(posedge i_clk) begin
+    o_data_reg <= line[rdPntr];
+end
+
+assign o_data = o_data_reg;
+
+
+always @(posedge i_clk) begin
+    if(i_rst)
+        o_data_valid_reg <= 1'b0;
+    else
+        o_data_valid_reg <= rd_safe;
+end
+
+assign o_data_valid = o_data_valid_reg;
+
 
 always @(posedge i_clk) begin
     if(i_rst)
         rdPntr <= 'd0;
-    else if(i_rd_data)
+    else if(rd_safe)
         rdPntr <= rdPntr + 'd1;
 end
 
 endmodule
+
