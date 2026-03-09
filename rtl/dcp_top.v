@@ -30,7 +30,7 @@ module dcp_top(
     );
     
 wire [7:0] rgb_min_pixel;
-wire [1799:0] line_buffer_out;
+wire [391:0] line_buffer_out;
 wire line_buffer_out_valid;
 wire [7:0] A_r, A_g, A_b, A_min;
 wire A_valid;
